@@ -31,6 +31,6 @@ module.exports = {
   },
   plugins: [new HtmlWebpackPlugin({
     title: 'ToyReact',
-    filename: './index.html'
+    template: './index.html'
   })]
 }
