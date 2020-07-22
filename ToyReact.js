@@ -3,6 +3,13 @@ class ElementWrapper {
     this.root = document.createElement(type)
   }
   setAttribute(name, value) {
+    if(name.match(/^on([\s\S]+)$/)){
+      let eventName = RegExp.$1.replace(/^[\s\S]/,s => s.toLowerCase())
+      this.root.addEventListener(eventName, value)
+    }
+    if(name === 'className'){
+      name = 'class'
+    }
     this.root.setAttribute(name, value)
   }
   appendChild(vchild) {
@@ -25,8 +32,13 @@ class TextWrapper {
 export class Component {
   constructor() {
     this.children = []
+    this.props = Object.create(null)
   }
   setAttribute(name, value) {
+    if(name.match(/^on([\s\S]+)$/)){
+      console.log(RegExp.$1)
+    }
+    this.props[name] = value
     this[name] = value
   }
   mountTo(parent) {
@@ -35,6 +47,26 @@ export class Component {
   }
   appendChild(vchild) {
     this.children.push(vchild)
+  }
+  setState(state) {
+    let merge = (oldState, newState) => {
+      for(let p in newState) {
+        if(typeof newState[p] === 'object') {  // 属性值类型为 object 时,进行递归拷贝合并
+          if(typeof oldState[p] !== 'object') {
+            oldState[p] = {}
+          }
+          merge(oldState[p], newState[p])
+        } else {
+          oldState[p] = newState[p]
+        }
+      }
+    }
+
+    if(!this.state && state) {
+      this.state = {}
+    }
+    merge(this.state, state)
+    console.log(this.state)
   }
 }
 
