@@ -13,10 +13,19 @@ class ElementWrapper {
     this.root.setAttribute(name, value)
   }
   appendChild(vchild) {
-    vchild.mountTo(this.root)
+    let range = document.createRange()
+    if(this.root.children.length) {
+      range.setStartAfter(this.root.lastChild)
+      range.setEndAfter(this.root.lastChild)
+    } else {
+      range.setStart(this.root, 0)
+      range.setEnd(this.root, 0)
+    }
+    vchild.mountTo(range)
   }
-  mountTo(parent) {
-    parent.appendChild(this.root)
+  mountTo(range) {
+    range.deleteContents()
+    range.insertNode(this.root)
   }
 }
 
@@ -24,8 +33,9 @@ class TextWrapper {
   constructor(content) {
     this.root = document.createTextNode(content)
   }
-  mountTo(parent) {
-    parent.appendChild(this.root)
+  mountTo(range) {
+    range.deleteContents()
+    range.insertNode(this.root)
   }
 }
 
@@ -41,9 +51,14 @@ export class Component {
     this.props[name] = value
     this[name] = value
   }
-  mountTo(parent) {
+  mountTo(range) {
+    this.range = range
+    this.update()
+  }
+  update() {
+    this.range.deleteContents()
     let vdom = this.render()
-    vdom.mountTo(parent)
+    vdom.mountTo(this.range)
   }
   appendChild(vchild) {
     this.children.push(vchild)
@@ -66,7 +81,7 @@ export class Component {
       this.state = {}
     }
     merge(this.state, state)
-    console.log(this.state)
+    this.update()
   }
 }
 
@@ -86,10 +101,10 @@ export const ToyReact = {
       element.setAttribute(name, attributes[name])
     }
 
-    let insertChildren = (children) => {
+    let insertNode = (children) => {
       for (let child of children) {
         if (typeof child === "object" && Array.isArray(child)) {
-          insertChildren(child)
+          insertNode(child)
         } else {
           if (!(child instanceof Component) && !(child instanceof ElementWrapper) && !(child instanceof TextWrapper)) {
             child = String(child)
@@ -103,11 +118,20 @@ export const ToyReact = {
       }
     }
 
-    insertChildren(children)
+    insertNode(children)
 
     return element
   },
   render(vdom, element) {
-    vdom.mountTo(element)
+    let range = document.createRange()
+    if(element.children.length) { // 一般情况下, element 都应该是一个空的div
+      range.setStartAfter(element.lastChild)
+      range.setEndAfter(element.lastChild)
+    } else {
+      range.setStart(element, 0)
+      range.setEnd(element,0)
+    }
+
+    vdom.mountTo(range)
   }
 }
